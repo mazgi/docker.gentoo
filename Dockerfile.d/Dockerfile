@@ -37,7 +37,7 @@ RUN locale-gen
 # see also: https://wiki.gentoo.org/wiki/Project:Portage/Sync
 RUN emerge -uvq dev-vcs/git
 # accept any return code, because rsync servers sometimes return errors.
-RUN (timeout 3m emerge --sync --quiet || true)
+RUN (timeout 3m emerge --sync --quiet; exit 0)
 # basic packages
 RUN emerge -uvq \
   app-admin/sudo \
