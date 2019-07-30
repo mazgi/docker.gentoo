@@ -1,6 +1,6 @@
 workflow "Build docker image on push" {
-  on = "push"
   resolves = ["Push Image"]
+  on = "push"
 }
 
 action "Build Image" {
