@@ -1,5 +1,7 @@
 # docker.gentoo
 
+[!screenshot screenfetch](docs/screenfetch.1.png)
+
 ## Build the image
 
 _(optional)_ Download archives from a [mirror](https://www.gentoo.org/downloads/mirrors/) and place in the top of the docker build context.
