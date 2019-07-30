@@ -8,8 +8,7 @@ ARG GENTOO_MIRROR='https://ftp.jaist.ac.jp/pub/Linux/Gentoo'
 ARG GENTOO_ARCH='amd64'
 WORKDIR /mnt/gentoo
 # Workaround: copy archives if exist in the build context.
-COPY Dockerfile stage3-${GENTOO_ARCH}-*.tar.xz portage-latest.tar.x[z] /tmp/
-RUN rm -f /tmp/Dockerfile
+COPY .keep stage3-${GENTOO_ARCH}-*.tar.xz portage-latest.tar.x[z] /tmp/
 # Resolve latest stage3 archive filename.
 RUN wget -P /tmp/ "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/latest-stage3-${GENTOO_ARCH}.txt"
 RUN grep -vE '^\s*(#|$)' /tmp/latest-stage3-${GENTOO_ARCH}.txt | awk '{print $1}' | tee /tmp/latest-stage3-${GENTOO_ARCH}-path.txt
