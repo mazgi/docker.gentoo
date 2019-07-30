@@ -1,6 +1,6 @@
 # docker.gentoo
 
-[!screenshot screenfetch](docs/screenfetch.1.png)
+![screenshot screenfetch](docs/screenfetch.1.png)
 
 ## Build the image
 
