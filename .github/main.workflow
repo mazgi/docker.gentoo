@@ -1,6 +1,6 @@
 workflow "Build docker image on push" {
   on = "push"
-  resolves = ["Build"]
+  resolves = ["Push Image"]
 }
 
 action "Build Image" {
@@ -16,6 +16,7 @@ action "Publish Filter" {
 }
 
 action "Push Image" {
+  needs = ["Publish Filter"]
   uses = "actions/action-builder/docker@master"
   runs = "docker"
   args = "push docker.pkg.github.com/mazgi/docker.gentoo/basic:latest Dockerfile.d"
