@@ -19,6 +19,7 @@ etc/portage/package.use
 etc/portage/repos.conf
 etc/profile.d/makeopts.sh
 var/cache/binpkgs
+var/cache/distfiles
 var/db/repos
 )
 
