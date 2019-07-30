@@ -1,0 +1,4 @@
+# stage and portage snapshot archives
+*.tar.*
+# binpkgs
+*.tbz2
