@@ -28,5 +28,3 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_TO_PUSH_TO_PACKAGE_REGISTRY }}
     - name: Push the Docker image to GitHub Package Registry
       run: docker push docker.pkg.github.com/mazgi/docker.gentoo/gentoo:$(cat /tmp/ref.txt)
-      env:
-        TAG: ${{ github.tag }}
