@@ -4,12 +4,15 @@
 FROM busybox as downloader
 # Choose a mirror that is near you.
 # mirror list: https://www.gentoo.org/downloads/mirrors/
-ARG GENTOO_MIRROR='https://ftp.jaist.ac.jp/pub/Linux/Gentoo'
-ARG GENTOO_ARCH='amd64'
+ARG GENTOO_MIRROR
+ENV GENTOO_MIRROR=${GENTOO_MIRROR:-'https://gentoo.osuosl.org/'}
+ARG GENTOO_ARCH
+ENV GENTOO_ARCH='amd64'
 WORKDIR /mnt/gentoo
 # Workaround: copy archives if exist in the build context.
 COPY .keep stage3-${GENTOO_ARCH}-*.tar.xz portage-latest.tar.x[z] /tmp/
 # Resolve latest stage3 archive filename.
+RUN echo Get latest stage3 information from: "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/latest-stage3-${GENTOO_ARCH}.txt"
 RUN wget -P /tmp/ "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/latest-stage3-${GENTOO_ARCH}.txt"
 RUN grep -vE '^\s*(#|$)' /tmp/latest-stage3-${GENTOO_ARCH}.txt | awk '{print $1}' | tee /tmp/latest-stage3-${GENTOO_ARCH}-path.txt
 RUN basename $(cat /tmp/latest-stage3-${GENTOO_ARCH}-path.txt) > /tmp/latest-stage3-${GENTOO_ARCH}-filename.txt
@@ -36,8 +39,10 @@ RUN locale-gen
 # Required git for portage git repositories.
 # see also: https://wiki.gentoo.org/wiki/Project:Portage/Sync
 RUN emerge -uvq dev-vcs/git
-# accept any return code, because rsync servers sometimes return errors.
-RUN (timeout 3m emerge --sync --quiet; exit 0)
+# Fixme: Avoid build failure on GitHub Actions captures.
+# ref. https://github.com/mazgi/docker.gentoo/issues/2
+## Accept any return code, because rsync servers sometimes return errors.
+## RUN (timeout 3m emerge --sync --quiet || true)
 # basic packages
 RUN emerge -uvq \
   app-admin/sudo \
