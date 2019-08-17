@@ -4,7 +4,7 @@ on:
   push:
     branches:
     - master
-    - !refs/pull/*
+    - '!refs/pull/*'
     tags:
   pull_request:
 
