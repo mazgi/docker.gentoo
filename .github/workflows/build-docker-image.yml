@@ -3,28 +3,24 @@ name: Build Docker Image
 on:
   push:
     branches:
-    - master
-    - '!refs/pull/*'
+      - master
     tags:
-  pull_request:
+      - *
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Save the ref
-      run: echo ${REF##refs/*/} > /tmp/ref.txt
-      env:
-        REF: ${{ github.ref }}
-    - name: Overwrite the ref by "latest" when on the master branch
-      run: echo 'latest' > /tmp/ref.txt
-      if: contains(github.ref, 'refs/heads/master')
+    - name: Generate the tag for current build
+      run: export TAG=${GITHUB_REF#refs/*/}; echo docker.pkg.github.com/${{ github.repository }}/gentoo:${TAG/master/latest} > /tmp/tag-for-docker.txt
     - name: Build the Docker image
-      run: docker build Dockerfile.d/ --tag docker.pkg.github.com/mazgi/docker.gentoo/gentoo:$(cat /tmp/ref.txt)
+      run: docker build Dockerfile.d/ --tag $(cat /tmp/tag-for-docker.txt)
     - name: Login to GitHub Package Registry
       run: docker login docker.pkg.github.com -u mazgi -p $GITHUB_TOKEN
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_TO_PUSH_TO_PACKAGE_REGISTRY }}
     - name: Push the Docker image to GitHub Package Registry
-      run: docker push docker.pkg.github.com/mazgi/docker.gentoo/gentoo:$(cat /tmp/ref.txt)
+      run: docker push $(cat /tmp/tag-for-docker.txt)
+    - name: Run the image
+      run: docker run -t --rm $(cat /tmp/tag-for-docker.txt) echo 'Congrats 🎉'
