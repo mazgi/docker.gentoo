@@ -70,9 +70,46 @@ RUN emerge -uNDvq @world
 RUN rm -rf /var/db/repos/* /var/lib/portage /var/log/*
 
 # ================================
-# main: extract artifacts and reduct the image size
+# extract artifacts and reduce the image size
 # --------------------------------
-FROM scratch
+FROM scratch as simple
 LABEL maintainer="docker@mazgi.com"
 CMD ["/bin/bash"]
 COPY --from=builder / /
+
+# ================================
+# install packages
+# --------------------------------
+FROM scratch as builder-media-processor
+# Set CMD for debug
+CMD ["/bin/bash"]
+ARG GENTOO_ARCH='amd64'
+COPY --from=downloader /mnt/gentoo /
+COPY ${GENTOO_ARCH} /
+RUN locale-gen
+RUN emerge -uvq\
+  dev-vcs/git\
+  app-admin/sudo\
+  app-portage/eix\
+  app-misc/screenfetch\
+  app-text/tree\
+  sys-process/htop\
+  sys-process/lsof\
+  app-misc/tmux\
+  app-shells/zsh\
+  app-editors/vim \
+  app-eselect/eselect-fontconfig\
+  media-fonts/powerline-symbols\
+  app-misc/jq
+RUN emerge -uvq\
+  media-gfx/imagemagick
+RUN emerge -uNDvq @world
+RUN rm -rf /var/db/repos/* /var/lib/portage /var/log/*
+
+# ================================
+# extract artifacts and reduce the image size
+# --------------------------------
+FROM scratch as media-processor
+LABEL maintainer="docker@mazgi.com"
+CMD ["/bin/bash"]
+COPY --from=builder-media-processor / /

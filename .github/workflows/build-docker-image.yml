@@ -9,17 +9,20 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [simple, media-processor]
     steps:
-    - uses: actions/checkout@v1
-    - name: Generate the tag for current build
-      run: export TAG=${GITHUB_REF#refs/*/}; echo docker.pkg.github.com/${{ github.repository }}/gentoo:${TAG/master/latest} > /tmp/tag-for-docker.txt
-    - name: Build the Docker image
-      run: docker build Dockerfile.d/ --tag $(cat /tmp/tag-for-docker.txt)
-    - name: Login to GitHub Package Registry
-      run: docker login docker.pkg.github.com -u mazgi -p $GITHUB_TOKEN
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_TO_PUSH_TO_PACKAGE_REGISTRY }}
-    - name: Push the Docker image to GitHub Package Registry
-      run: docker push $(cat /tmp/tag-for-docker.txt)
-    - name: Run the image
-      run: docker run -t --rm $(cat /tmp/tag-for-docker.txt) echo 'Congrats 🎉'
+      - uses: actions/checkout@v1
+      - name: Generate the tag for current build
+        run: export TAG=${GITHUB_REF#refs/*/}; echo docker.pkg.github.com/${{ github.repository }}/${{ matrix.target }}:${TAG/master/latest} > /tmp/tag-for-docker.txt
+      - name: Build the Docker image
+        run: docker build Dockerfile.d/ --target ${{ matrix.target }} --tag $(cat /tmp/tag-for-docker.txt)
+      - name: Login to GitHub Package Registry
+        run: docker login docker.pkg.github.com -u mazgi -p $GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_TO_PUSH_TO_PACKAGE_REGISTRY }}
+      - name: Push the Docker image to GitHub Package Registry
+        run: docker push $(cat /tmp/tag-for-docker.txt)
+      - name: Run the image
+        run: docker run -t --rm $(cat /tmp/tag-for-docker.txt) echo 'Congrats 🎉'

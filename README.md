@@ -31,5 +31,5 @@ scripts/collect.sh
 Let's build your image :whale:
 
 ```shellsession
-docker build Dockerfile.d
+docker build --target simple Dockerfile.d
 ```
