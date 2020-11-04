@@ -31,7 +31,9 @@ COPY rootfs.${GENTOO_ARCH} .
 
 # Configure the system
 RUN :\
-  && locale-gen
+  && locale-gen\
+  && eselect profile set 'default/linux/amd64/17.1/systemd'\
+  emerge -Cq sys-apps/openrc sys-apps/sysvinit
 # Sync the gentoo repository
 RUN :\
   && emaint sync --repo gentoo\
@@ -47,6 +49,7 @@ RUN emerge -uNDvq --buildpkg --usepkg\
   dev-vcs/git\
   net-analyzer/netcat\
   net-dns/avahi\
+  sys-apps/systemd\
   sys-auth/nss-mdns\
   && :
 # Sync all repositories
