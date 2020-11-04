@@ -44,11 +44,11 @@ jobs:
           key: ${{ runner.os }}-build-working-dir-$(basename ${{ matrix.target-context }})
       - name: store environment variables
         run: |
-          echo "INTERMEDIATE_CONTAINER_NAME=${{ runner.os }}-intermediate-container-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
-          echo "INTERMEDIATE_IMAGE_NAME=${{ runner.os }}-intermediate-image-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+          echo "INTERMEDIATE_CONTAINER_NAME=intermediate-container-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+          echo "INTERMEDIATE_IMAGE_NAME=intermediate-image-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
           echo "SHORT_SHA=$(echo '${{ toJSON(github) }}' | jq -r '.sha[0:7]')" >> $GITHUB_ENV
           echo "TAG=$(date +%Y%m-)$SHORT_SHA" >> $GITHUB_ENV
-          echo "TARGET_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+          echo "RESULT_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
       - name: build intermediate image
         run: |
           docker build --tag $INTERMEDIATE_IMAGE_NAME:$TAG --target builder ${{ matrix.target-context }}
@@ -74,10 +74,10 @@ jobs:
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
       - name: build and push ${{ matrix.target-context }}
         run: |
-          docker build --tag $TARGET_IMAGE ${{ matrix.target-context }}
-          docker tag $TARGET_IMAGE $TARGET_IMAGE:$TAG
-          docker push $TARGET_IMAGE:$TAG
+          docker build --tag $RESULT_IMAGE ${{ matrix.target-context }}
+          docker tag $RESULT_IMAGE $RESULT_IMAGE:$TAG
+          docker push $RESULT_IMAGE:$TAG
       - name: overwrite latest tags if it is the main branch
         run: |
-          docker push $TARGET_IMAGE
+          docker push $RESULT_IMAGE
         if: github.ref == 'refs/heads/main'
