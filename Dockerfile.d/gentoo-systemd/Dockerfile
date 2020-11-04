@@ -33,7 +33,7 @@ COPY rootfs.${GENTOO_ARCH} .
 RUN :\
   && locale-gen\
   && eselect profile set 'default/linux/amd64/17.1/systemd'\
-  emerge -Cq sys-apps/openrc sys-apps/sysvinit
+  && emerge -Cq sys-apps/openrc sys-apps/sysvinit
 # Sync the gentoo repository
 RUN :\
   && emaint sync --repo gentoo\
