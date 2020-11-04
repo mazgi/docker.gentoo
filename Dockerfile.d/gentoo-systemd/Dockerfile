@@ -28,6 +28,8 @@ ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
 COPY --from=downloader /mnt/gentoo /
 # Copy configurations
 COPY rootfs/${GENTOO_ARCH} .
+# Restore cache
+COPY cache/${GENTOO_ARCH} .
 
 RUN locale-gen
 # Sync the gentoo repository
