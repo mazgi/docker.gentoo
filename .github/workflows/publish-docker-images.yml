@@ -2,6 +2,8 @@ name: publish-docker-images
 # See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestpaths
 on:
   push:
+    paths:
+      - "Dockerfile.d/**"
 
 jobs:
   detect:

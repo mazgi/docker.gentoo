@@ -38,7 +38,7 @@ RUN :\
   # Fall back
   || emerge-webrsync
 # Install packages
-RUN emerge -uNDvq --buildpkg\
+RUN emerge -uNDvq --buildpkg --usepkg\
   app-portage/eix\
   app-portage/gentoolkit\
   app-misc/screenfetch\
