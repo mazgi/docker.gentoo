@@ -34,7 +34,7 @@ RUN :\
   && locale-gen\
   && emaint sync --repo gentoo\
   # Fall back
-  || emerge-webrsync
+  || emerge-webrsync --quiet
 # Install packages
 RUN emerge -uNDvq --buildpkg --usepkg\
   app-portage/eix\
@@ -49,7 +49,7 @@ RUN emerge -uNDvq --buildpkg --usepkg\
   sys-auth/nss-mdns\
   && :
 # Sync all repositories
-RUN emaint sync -a
+RUN emaint sync --auto
 # Clean up
 RUN rm -rf\
   /var/cache/binpkgs/*\
