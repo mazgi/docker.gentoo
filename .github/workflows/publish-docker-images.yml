@@ -53,7 +53,7 @@ jobs:
           echo "TARGET_IMAGE=$TARGET_IMAGE" >> $GITHUB_ENV
           docker build --tag $TARGET_IMAGE ${{ matrix.target-context }}
           docker tag $TARGET_IMAGE $TARGET_IMAGE:$TAG
-          echo docker push $TARGET_IMAGE:$TAG
+          docker push $TARGET_IMAGE:$TAG
       - name: cache binpkgs if it is the main branch
         run: |
           NAME=${{ runner.os }}-get-cache-$(basename ${{ matrix.target-context }})
@@ -62,8 +62,8 @@ jobs:
           docker cp $NAME:/var/cache/binpkgs/ ${{ matrix.target-context }}/cache/var/cache/
           docker rm $NAME
           ls -alR ${{ matrix.target-context }}/cache/var/cache/
-        if: github.ref == '_refs/heads/main'
+        if: github.ref == 'refs/heads/main'
       - name: overwrite latest tags if it is the main branch
         run: |
-          echo docker push $TARGET_IMAGE
+          docker push $TARGET_IMAGE
         if: github.ref == 'refs/heads/main'
