@@ -4,7 +4,8 @@ ARG GENTOO_MIRROR
 # ================================
 FROM busybox as downloader
 
-LABEL org.opencontainers.image.source="https://github.com/mazgi/dockerfiles/blob/main/Dockerfile.d/gentoo/Dockerfile"
+LABEL maintainer="docker@mazgi.com"
+LABEL org.opencontainers.image.source="https://github.com/mazgi/docker.gentoo/blob/main/Dockerfile.d/gentoo/Dockerfile"
 
 ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
 ENV GENTOO_MIRROR=${GENTOO_MIRROR:-'https://gentoo.osuosl.org/'}
