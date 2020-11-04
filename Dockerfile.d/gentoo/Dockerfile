@@ -27,7 +27,7 @@ ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
 # Copy extracted files
 COPY --from=downloader /mnt/gentoo /
 # Copy configurations
-COPY rootfs.${GENTOO_ARCH} .
+COPY rootfs/${GENTOO_ARCH} .
 
 RUN locale-gen
 # Sync the gentoo repository
