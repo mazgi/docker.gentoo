@@ -22,9 +22,6 @@ RUN :\
 # ================================
 FROM scratch as builder
 
-LABEL maintainer="docker@mazgi.com"
-LABEL org.opencontainers.image.source="https://github.com/mazgi/docker.gentoo/blob/main/Dockerfile.d/gentoo/Dockerfile"
-
 ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
 
 # Copy extracted files
@@ -63,5 +60,6 @@ RUN rm -rf\
 # ================================
 FROM scratch
 LABEL maintainer="docker@mazgi.com"
+LABEL org.opencontainers.image.source="https://github.com/mazgi/docker.gentoo/blob/main/Dockerfile.d/gentoo/Dockerfile"
 CMD ["/bin/zsh"]
 COPY --from=builder / /
