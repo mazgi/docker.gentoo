@@ -29,9 +29,7 @@ COPY --from=downloader /mnt/gentoo /
 # Copy configurations
 COPY rootfs.${GENTOO_ARCH} .
 
-# Configure the system
-RUN :\
-  && locale-gen
+RUN locale-gen
 # Sync the gentoo repository
 RUN :\
   && emaint sync --repo gentoo\
@@ -51,6 +49,14 @@ RUN emerge -uNDvq --buildpkg --usepkg\
   && :
 # Sync all repositories
 RUN emaint sync --auto
+
+# ================================
+FROM scratch as reducer
+
+ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
+
+# Copy extracted files
+COPY --from=builder / /
 # Clean up
 RUN rm -rf\
   /var/cache/binpkgs/*\
@@ -63,4 +69,4 @@ FROM scratch
 LABEL maintainer="docker@mazgi.com"
 LABEL org.opencontainers.image.source="https://github.com/mazgi/docker.gentoo/blob/main/Dockerfile.d/gentoo/Dockerfile"
 CMD ["/bin/zsh"]
-COPY --from=builder / /
+COPY --from=reducer / /
