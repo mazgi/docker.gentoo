@@ -1,0 +1,67 @@
+name: publish-docker-images
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestpaths
+on:
+  push:
+
+jobs:
+  detect:
+    outputs:
+      changed-contexts: ${{ steps['detected-context-paths'].outputs['changed-contexts'] }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: file_changes
+        uses: trilom/file-changes-action@v1.2.4
+      - name: detect contexts that changed
+        run: >
+          jq --compact-output --slurp '[.[][]] 
+          | map(select(. | match("^Dockerfile\\.d/"))) 
+          | map(. |= (gsub("Dockerfile\\.d/(?<context>[^/]*)/.*"; "Dockerfile.d/\(.context)"))) 
+          | unique' 
+          $HOME/files_{added,modified}.json > $HOME/changed_contexts.json
+      - id: detected-context-paths
+        run: echo "::set-output name=changed-contexts::$(cat $HOME/changed_contexts.json)"
+  build:
+    needs:
+      - detect
+    strategy:
+      matrix:
+        # See: https://github.com/actions/virtual-environments
+        os: [ubuntu-latest]
+        target-context: ${{ fromJson(needs.detect.outputs['changed-contexts']) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v1
+        with:
+          path: ${{ matrix.target-context }}/cache
+          key: ${{ runner.os }}-build-cache-$(basename ${{ matrix.target-context }})
+      - uses: actions/cache@v1
+        with:
+          path: ${{ matrix.target-context }}/working-dir
+          key: ${{ runner.os }}-build-working-dir-$(basename ${{ matrix.target-context }})
+      - name: store the short sha hash
+        run: echo SHORT_SHA=$(echo '${{ toJSON(github) }}' | jq -r '.sha[0:7]') >> $GITHUB_ENV
+      - name: login to ghcr.io
+        run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
+      - name: build and push ${{ matrix.target-context }}
+        run: |
+          TAG=$(date +%Y%m-)$SHORT_SHA
+          TARGET_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})
+          echo "TARGET_IMAGE=$TARGET_IMAGE" >> $GITHUB_ENV
+          docker build --tag $TARGET_IMAGE ${{ matrix.target-context }}
+          docker tag $TARGET_IMAGE $TARGET_IMAGE:$TAG
+          echo docker push $TARGET_IMAGE:$TAG
+      - name: cache binpkgs if it is the main branch
+        run: |
+          NAME=${{ runner.os }}-get-cache-$(basename ${{ matrix.target-context }})
+          docker run --name=$NAME $TARGET_IMAGE sh -c ':'
+          mkdir -p ${{ matrix.target-context }}/cache/var/cache/
+          docker cp $NAME:/var/cache/binpkgs/ ${{ matrix.target-context }}/cache/var/cache/
+          docker rm $NAME
+          ls -alR ${{ matrix.target-context }}/cache/var/cache/
+        if: github.ref == '_refs/heads/main'
+      - name: overwrite latest tags if it is the main branch
+        run: |
+          echo docker push $TARGET_IMAGE
+        if: github.ref == 'refs/heads/main'

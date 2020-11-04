@@ -1,0 +1,11 @@
+app-portage/eix
+app-portage/gentoolkit
+app-misc/screenfetch
+app-shells/zsh
+app-text/tree
+dev-vcs/git
+net-analyzer/netcat
+net-dns/avahi
+net-dns/bind-tools
+sys-apps/systemd
+sys-auth/nss-mdns
