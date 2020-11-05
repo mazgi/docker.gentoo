@@ -40,13 +40,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ matrix.target-context }}/working-dir
-          key: ${{ runner.os }}-build-working-dir-$(basename ${{ matrix.target-context }})
-      - name: Cache working dir
+          key: ${{ runner.os }}-build-working-dir-${{ matrix.target-context }}
+      - name: Cache cache dir
         id: cache-cache-dir
         uses: actions/cache@v2
         with:
           path: ${{ matrix.target-context }}/cache
-          key: ${{ runner.os }}-build-cache-$(basename ${{ matrix.target-context }})
+          key: ${{ runner.os }}-build-cache-${{ matrix.target-context }}
       - name: Download archives
         run: |
           ${{ matrix.target-context }}/get-gentoo-archives.sh
