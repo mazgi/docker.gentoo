@@ -8,11 +8,13 @@ WORKING_DIR=${GENTOO_WORKING_DIR:-${SCRIPT_DIR}/working-dir}
 
 # Download gentoo portage from GitHub
 mkdir -p "${CACHE_DIR}/var/db/repos/gentoo/"
-wget --output-document=- --output-file=/dev/null https://github.com/gentoo/gentoo/tarball/HEAD\
+wget --no-verbose\
+ --output-document=- --output-file=/dev/null https://github.com/gentoo/gentoo/tarball/HEAD\
  | tar xz --strip-components=1 -C "${CACHE_DIR}/var/db/repos/gentoo"
 
 # Resolve latest stage3 archive filename.
-wget --output-document "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}.txt"\
+wget --no-verbose\
+ --output-document "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}.txt"\
  "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/latest-stage3-${GENTOO_ARCH}.txt"
 grep -vE '^\s*(#|$)' "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}.txt"\
  | awk '{ print $1 }'\
@@ -23,6 +25,7 @@ basename $(cat "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-path.txt")\
 # Download the stage3 archive.
 if [ ! -f "${WORKING_DIR}/$(cat ${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-filename.txt)" ]; then
   wget --directory-prefix "${WORKING_DIR}/"\
+   --no-verbose\
    "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/$(cat ${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-path.txt)"
 fi
 
@@ -30,5 +33,6 @@ fi
 # see also: https://wiki.gentoo.org/wiki//var/db/repos/gentoo
 if [ ! -f "${WORKING_DIR}/portage-latest.tar.xz" ]; then
   wget --directory-prefix "${WORKING_DIR}/"\
+   --no-verbose\
    "${GENTOO_MIRROR}/snapshots/portage-latest.tar.xz"
 fi

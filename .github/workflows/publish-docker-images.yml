@@ -78,8 +78,8 @@ jobs:
       - name: remove intermediate container
         run: |
           docker rm $INTERMEDIATE_CONTAINER_NAME
-          apt-get update --quiet
-          apt-get install --assume-yes --no-install-recommends --quiet tree
+          sudo apt-get update --quiet
+          sudo apt-get install --assume-yes --no-install-recommends --quiet tree
           tree -d ${{ matrix.target-context }}/cache/
       - name: login to ghcr.io
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
