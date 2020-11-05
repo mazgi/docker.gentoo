@@ -32,18 +32,16 @@ COPY rootfs/${GENTOO_ARCH} .
 COPY cache/${GENTOO_ARCH} .
 
 RUN locale-gen
-# Sync the gentoo repository
-RUN :\
-  && emaint sync --repo gentoo\
-  # Fall back
-  || emerge-webrsync --quiet
-# Configure the system
-RUN :\
+# RUN : sync the portage repository\
+#   && emaint sync --repo gentoo\
+#   # Fall back
+#   || emerge-webrsync --quiet
+RUN : set the profile to systemd\
   && eselect profile list\
   && eselect profile set 'default/linux/amd64/17.1/systemd'\
   && emerge -Cq sys-apps/openrc sys-apps/sysvinit
-# Install packages
-RUN emerge -uNDvq --buildpkg --usepkg\
+RUN : emerge packages\
+  emerge -uNDvq --buildpkg --usepkg\
   app-portage/eix\
   app-portage/gentoolkit\
   app-misc/screenfetch\
@@ -55,8 +53,8 @@ RUN emerge -uNDvq --buildpkg --usepkg\
   sys-apps/systemd\
   sys-auth/nss-mdns\
   && :
-# Sync all repositories
-RUN emaint sync --auto
+# # Sync all repositories
+# RUN emaint sync --auto
 
 # ================================
 FROM scratch as reducer

@@ -32,13 +32,12 @@ COPY rootfs/${GENTOO_ARCH} .
 COPY cache/${GENTOO_ARCH} .
 
 RUN locale-gen
-# Sync the gentoo repository
-RUN :\
-  && emaint sync --repo gentoo\
-  # Fall back
-  || emerge-webrsync --quiet
-# Install packages
-RUN emerge -uNDvq --buildpkg --usepkg\
+# RUN : sync the portage repository\
+#   && emaint sync --repo gentoo\
+#   # Fall back
+#   || emerge-webrsync --quiet
+RUN : emerge packages\
+  emerge -uNDvq --buildpkg --usepkg\
   app-portage/eix\
   app-portage/gentoolkit\
   app-misc/screenfetch\
@@ -49,8 +48,8 @@ RUN emerge -uNDvq --buildpkg --usepkg\
   net-dns/avahi\
   sys-auth/nss-mdns\
   && :
-# Sync all repositories
-RUN emaint sync --auto
+# # Sync all repositories
+# RUN emaint sync --auto
 
 # ================================
 FROM scratch as reducer
