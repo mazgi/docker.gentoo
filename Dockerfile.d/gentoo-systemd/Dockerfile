@@ -36,6 +36,10 @@ RUN locale-gen
 #   && emaint sync --repo gentoo\
 #   # Fall back
 #   || emerge-webrsync --quiet
+RUN : set the profile to systemd\
+  && eselect profile list\
+  && eselect profile set 'default/linux/amd64/17.1/systemd'\
+  && emerge -Cq sys-apps/openrc sys-apps/sysvinit
 RUN : emerge packages\
   emerge -uNDvq --buildpkg --usepkg\
   app-portage/eix\
@@ -46,6 +50,7 @@ RUN : emerge packages\
   dev-vcs/git\
   net-analyzer/netcat\
   net-dns/avahi\
+  sys-apps/systemd\
   sys-auth/nss-mdns\
   && :
 # # Sync all repositories

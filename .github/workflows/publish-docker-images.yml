@@ -3,6 +3,7 @@ name: publish-docker-images
 on:
   push:
     paths:
+      - ".github/workflows/**"
       - "Dockerfile.d/**"
 
 jobs:
@@ -34,36 +35,60 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v1
-        with:
-          path: ${{ matrix.target-context }}/cache
-          key: ${{ runner.os }}-build-cache-$(basename ${{ matrix.target-context }})
-      - uses: actions/cache@v1
+      - name: Cache working dir
+        id: cache-working-dir
+        uses: actions/cache@v2
         with:
           path: ${{ matrix.target-context }}/working-dir
-          key: ${{ runner.os }}-build-working-dir-$(basename ${{ matrix.target-context }})
-      - name: store the short sha hash
-        run: echo SHORT_SHA=$(echo '${{ toJSON(github) }}' | jq -r '.sha[0:7]') >> $GITHUB_ENV
+          key: ${{ runner.os }}-build-working-dir-${{ matrix.target-context }}
+      - name: Cache cache dir
+        id: cache-cache-dir
+        uses: actions/cache@v2
+        with:
+          path: ${{ matrix.target-context }}/cache
+          key: ${{ runner.os }}-build-cache-${{ matrix.target-context }}
+      - name: Download archives
+        run: |
+          ${{ matrix.target-context }}/get-gentoo-archives.sh
+      - name: store environment variables
+        run: |
+          echo "INTERMEDIATE_CONTAINER_NAME=intermediate-container-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+          echo "INTERMEDIATE_IMAGE_NAME=intermediate-image-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+          SHORT_SHA=$(echo '${{ toJSON(github) }}' | jq -r '.sha[0:7]')
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "TAG=$(date +%Y%m-)$SHORT_SHA" >> $GITHUB_ENV
+          echo "RESULT_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+      - name: build intermediate image
+        run: |
+          docker build --tag $INTERMEDIATE_IMAGE_NAME:$TAG --target builder ${{ matrix.target-context }}
+      - name: start intermediate container
+        run: |
+          docker run --name=$INTERMEDIATE_CONTAINER_NAME $INTERMEDIATE_IMAGE_NAME:$TAG sh -c ':'
+      - name: cache files
+        run: |
+          TARGET_DIR=var/db/repos/
+          mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+          docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+      - name: cache binpkgs if it is the main branch
+        run: |
+          TARGET_DIR=var/cache/binpkgs/
+          mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+          docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+        if: github.ref == 'refs/heads/main'
+      - name: remove intermediate container
+        run: |
+          docker rm $INTERMEDIATE_CONTAINER_NAME
+          sudo apt-get update --quiet
+          sudo apt-get install --assume-yes --no-install-recommends --quiet tree
+          tree -d ${{ matrix.target-context }}/cache/
       - name: login to ghcr.io
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
       - name: build and push ${{ matrix.target-context }}
         run: |
-          TAG=$(date +%Y%m-)$SHORT_SHA
-          TARGET_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})
-          echo "TARGET_IMAGE=$TARGET_IMAGE" >> $GITHUB_ENV
-          docker build --tag $TARGET_IMAGE ${{ matrix.target-context }}
-          docker tag $TARGET_IMAGE $TARGET_IMAGE:$TAG
-          docker push $TARGET_IMAGE:$TAG
-      - name: cache binpkgs if it is the main branch
-        run: |
-          NAME=${{ runner.os }}-get-cache-$(basename ${{ matrix.target-context }})
-          docker run --name=$NAME $TARGET_IMAGE sh -c ':'
-          mkdir -p ${{ matrix.target-context }}/cache/var/cache/
-          docker cp $NAME:/var/cache/binpkgs/ ${{ matrix.target-context }}/cache/var/cache/
-          docker rm $NAME
-          ls -alR ${{ matrix.target-context }}/cache/var/cache/
-        if: github.ref == 'refs/heads/main'
+          docker build --tag $RESULT_IMAGE ${{ matrix.target-context }}
+          docker tag $RESULT_IMAGE $RESULT_IMAGE:$TAG
+          docker push $RESULT_IMAGE:$TAG
       - name: overwrite latest tags if it is the main branch
         run: |
-          docker push $TARGET_IMAGE
+          docker push $RESULT_IMAGE
         if: github.ref == 'refs/heads/main'
