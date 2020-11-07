@@ -1,5 +1,6 @@
 ARG GENTOO_ARCH='amd64'
 ARG GENTOO_MIRROR
+ARG GENTOO_PROFILE="default/linux/${GENTOO_ARCH}/17.1/systemd"
 
 # ================================
 FROM busybox as downloader
@@ -23,6 +24,7 @@ RUN :\
 FROM scratch as builder
 
 ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
+ENV GENTOO_PROFILE=${GENTOO_PROFILE:-"default/linux/${GENTOO_ARCH}/17.1/systemd"}
 
 # Copy extracted files
 COPY --from=downloader /mnt/gentoo /
@@ -36,12 +38,13 @@ RUN locale-gen
 #   && emaint sync --repo gentoo\
 #   # Fall back
 #   || emerge-webrsync --quiet
-RUN : set the profile to systemd\
+RUN : set the profile\
   && eselect profile list\
-  && eselect profile set 'default/linux/amd64/17.1/systemd'\
+  && eselect profile set ${GENTOO_PROFILE}\
   && emerge -Cq sys-apps/openrc sys-apps/sysvinit
 RUN : emerge packages\
   emerge -uNDvq --buildpkg --usepkg\
+  app-admin/sudo\
   app-portage/eix\
   app-portage/gentoolkit\
   app-misc/screenfetch\
@@ -63,12 +66,15 @@ ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
 
 # Copy extracted files
 COPY --from=builder / /
+RUN cp -Rp /var/db/repos/gentoo/profiles /tmp/
 # Clean up
 RUN rm -rf\
   /var/cache/binpkgs/*\
   /var/db/repos/*\
   /var/lib/portage\
   /var/log/*
+RUN mkdir -p /var/db/repos/gentoo/\
+  && mv /tmp/profiles /var/db/repos/gentoo/
 
 # ================================
 FROM scratch
