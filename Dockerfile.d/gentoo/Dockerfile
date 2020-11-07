@@ -40,8 +40,7 @@ RUN locale-gen
 #   || emerge-webrsync --quiet
 RUN : set the profile\
   && eselect profile list\
-  && eselect profile set ${GENTOO_PROFILE}\
-  && emerge -Cq sys-apps/openrc sys-apps/sysvinit
+  && eselect profile set ${GENTOO_PROFILE}
 RUN : emerge packages\
   emerge -uNDvq --buildpkg --usepkg\
   app-admin/sudo\
