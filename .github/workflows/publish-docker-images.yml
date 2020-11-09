@@ -34,9 +34,20 @@ jobs:
         target-context: ${{ fromJson(needs.detect.outputs['changed-contexts']) }}
     runs-on: ${{ matrix.os }}
     steps:
-      - run: docker system df
-      - run: df -k .
       - uses: actions/checkout@v2
+
+      - name: enable buildkit
+        run: |
+          echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
+      - name: store environment variables
+        run: |
+          echo "INTERMEDIATE_CONTAINER_BASENAME=intermediate-container-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+          echo "INTERMEDIATE_IMAGE_BASENAME=intermediate-image-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+          SHORT_SHA=$(echo '${{ toJSON(github) }}' | jq -r '.sha[0:7]')
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "TAG=$(date +%Y%m-)$SHORT_SHA" >> $GITHUB_ENV
+          echo "RESULT_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
+
       - name: Cache working dir
         id: cache-working-dir
         uses: actions/cache@v2
@@ -49,49 +60,39 @@ jobs:
         with:
           path: ${{ matrix.target-context }}/cache
           key: ${{ runner.os }}-build-cache-${{ matrix.target-context }}
+
       - name: Download archives
         run: |
           ${{ matrix.target-context }}/get-gentoo-archives.sh
-      - name: enable buildkit
+      - name: build intermediate image(downloader)
         run: |
-          echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
-      - name: store environment variables
+          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-downloader:$TAG --target downloader ${{ matrix.target-context }}
+      - name: build intermediate image(builder)
         run: |
-          echo "INTERMEDIATE_CONTAINER_NAME=intermediate-container-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
-          echo "INTERMEDIATE_IMAGE_NAME=intermediate-image-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
-          SHORT_SHA=$(echo '${{ toJSON(github) }}' | jq -r '.sha[0:7]')
-          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
-          echo "TAG=$(date +%Y%m-)$SHORT_SHA" >> $GITHUB_ENV
-          echo "RESULT_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
-      - name: build intermediate image
+          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-downloader:$TAG --target builder ${{ matrix.target-context }}
+      - name: build intermediate image(reducer)
         run: |
-          docker build --tag $INTERMEDIATE_IMAGE_NAME:$TAG --target builder ${{ matrix.target-context }}
+          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-downloader:$TAG --target reducer ${{ matrix.target-context }}
+
       - name: start intermediate container
         run: |
-          docker run --name=$INTERMEDIATE_CONTAINER_NAME $INTERMEDIATE_IMAGE_NAME:$TAG sh -c ':'
-      - run: docker system df
-      - run: df -k .
-      # - name: cache portage repos
-      #   run: |
-      #     TARGET_DIR=var/db/repos/
-      #     mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
-      #     docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
-      - run: df -k .
+          docker run --name=${INTERMEDIATE_CONTAINER_BASENAME}-builder ${INTERMEDIATE_IMAGE_BASENAME}-builder:$TAG sh -c ':'
+      - name: clear cache
+        run: |
+          TARGET_DIR=var/db/repos/
+          rm -rf ${{ matrix.target-context }}/cache/
       - name: cache binpkgs if it is the main branch
         run: |
           TARGET_DIR=var/cache/binpkgs/
           mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
-          docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+          docker cp ${INTERMEDIATE_CONTAINER_BASENAME}-builder:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
         if: github.ref == 'refs/heads/main'
-      - run: df -k .
       - name: remove intermediate container
         run: |
-          docker rm $INTERMEDIATE_CONTAINER_NAME
+          docker rm ${INTERMEDIATE_CONTAINER_BASENAME}-builder
+
       - name: login to ghcr.io
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
-      - run: docker system df
-      - run: df -k .
-      - run: du --max-depth=4 -h ${{ matrix.target-context }}
       - name: build and push ${{ matrix.target-context }}
         run: |
           docker build --tag $RESULT_IMAGE ${{ matrix.target-context }}

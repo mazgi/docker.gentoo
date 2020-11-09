@@ -5,6 +5,7 @@ GENTOO_MIRROR=${GENTOO_MIRROR:-'https://gentoo.osuosl.org/'}
 SCRIPT_DIR=$(dirname $(readlink -f "$0"))
 CACHE_DIR=${GENTOO_WORKING_DIR:-${SCRIPT_DIR}/cache/${GENTOO_ARCH}}
 WORKING_DIR=${GENTOO_WORKING_DIR:-${SCRIPT_DIR}/working-dir}
+GENTOO_STAGE3_POINTER_FILENAME=latest-stage3-${GENTOO_ARCH}-systemd.txt
 
 # Download gentoo portage from GitHub
 mkdir -p "${CACHE_DIR}/var/db/repos/gentoo/"
@@ -14,9 +15,9 @@ wget --no-verbose\
 
 # Resolve latest stage3 archive filename.
 wget --no-verbose\
- --output-document "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}.txt"\
- "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/latest-stage3-${GENTOO_ARCH}.txt"
-grep -vE '^\s*(#|$)' "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}.txt"\
+ --output-document "${WORKING_DIR}/${GENTOO_STAGE3_POINTER_FILENAME}"\
+ "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/${GENTOO_STAGE3_POINTER_FILENAME}"
+grep -vE '^\s*(#|$)' "${WORKING_DIR}/${GENTOO_STAGE3_POINTER_FILENAME}"\
  | awk '{ print $1 }'\
  | tee "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-path.txt"
 basename $(cat "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-path.txt")\
@@ -24,15 +25,9 @@ basename $(cat "${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-path.txt")\
 
 # Download the stage3 archive.
 if [ ! -f "${WORKING_DIR}/$(cat ${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-filename.txt)" ]; then
+  # Remove old stage3 archives.
+  rm -f ${WORKING_DIR}/stage3-${GENTOO_ARCH}-*.tar.xz
   wget --directory-prefix "${WORKING_DIR}/"\
    --no-verbose\
    "${GENTOO_MIRROR}/releases/${GENTOO_ARCH}/autobuilds/$(cat ${WORKING_DIR}/latest-stage3-${GENTOO_ARCH}-path.txt)"
-fi
-
-# Download and extract portage repository archive.
-# see also: https://wiki.gentoo.org/wiki//var/db/repos/gentoo
-if [ ! -f "${WORKING_DIR}/portage-latest.tar.xz" ]; then
-  wget --directory-prefix "${WORKING_DIR}/"\
-   --no-verbose\
-   "${GENTOO_MIRROR}/snapshots/portage-latest.tar.xz"
 fi

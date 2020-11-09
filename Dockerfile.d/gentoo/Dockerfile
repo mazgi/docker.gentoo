@@ -3,7 +3,7 @@ ARG GENTOO_MIRROR
 ARG GENTOO_PROFILE="default/linux/${GENTOO_ARCH}/17.1"
 
 # ================================
-FROM busybox as downloader
+FROM alpine/git as downloader
 
 ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
 ENV GENTOO_MIRROR=${GENTOO_MIRROR:-'https://gentoo.osuosl.org/'}
@@ -13,12 +13,15 @@ WORKDIR /mnt/gentoo
 COPY get-gentoo-archives.sh /tmp/
 COPY working-dir /tmp/working-dir/
 
-# Get Gentoo archives
+# Get and extract Gentoo stage3 archive
 RUN :\
   && /tmp/get-gentoo-archives.sh\
-  && tar xpf /tmp/working-dir/$(cat /tmp/working-dir/latest-stage3-${GENTOO_ARCH}-filename.txt)\
-  && mkdir -p var/db/repos/gentoo\
-  && tar xf /tmp/working-dir/portage-latest.tar.xz -C var/db/repos/gentoo
+  && tar xpf /tmp/working-dir/$(cat /tmp/working-dir/latest-stage3-${GENTOO_ARCH}-filename.txt)
+# Clone portage repository from GitHub
+RUN :\
+  && mkdir -p var/db/repos/\
+  && git clone --depth=1 git://github.com/gentoo-mirror/gentoo.git var/db/repos/gentoo\
+  && rm -rf var/db/repos/gentoo/.git
 
 # ================================
 FROM scratch as builder
