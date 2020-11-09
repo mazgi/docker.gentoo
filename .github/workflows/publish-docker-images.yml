@@ -34,6 +34,7 @@ jobs:
         target-context: ${{ fromJson(needs.detect.outputs['changed-contexts']) }}
     runs-on: ${{ matrix.os }}
     steps:
+      - run: docker system df
       - uses: actions/checkout@v2
       - name: Cache working dir
         id: cache-working-dir
@@ -64,6 +65,7 @@ jobs:
       - name: start intermediate container
         run: |
           docker run --name=$INTERMEDIATE_CONTAINER_NAME $INTERMEDIATE_IMAGE_NAME:$TAG sh -c ':'
+      - run: docker system df
       - name: cache files
         run: |
           TARGET_DIR=var/db/repos/
@@ -83,6 +85,7 @@ jobs:
           tree -d ${{ matrix.target-context }}/cache/
       - name: login to ghcr.io
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
+      - run: docker system df
       - name: build and push ${{ matrix.target-context }}
         run: |
           docker build --tag $RESULT_IMAGE ${{ matrix.target-context }}
