@@ -35,6 +35,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - run: docker system df
+      - run: df -k .
       - uses: actions/checkout@v2
       - name: Cache working dir
         id: cache-working-dir
@@ -68,17 +69,20 @@ jobs:
         run: |
           docker run --name=$INTERMEDIATE_CONTAINER_NAME $INTERMEDIATE_IMAGE_NAME:$TAG sh -c ':'
       - run: docker system df
+      - run: df -k .
       - name: cache files
         run: |
           TARGET_DIR=var/db/repos/
           mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
           docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+      - run: df -k .
       - name: cache binpkgs if it is the main branch
         run: |
           TARGET_DIR=var/cache/binpkgs/
           mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
           docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
         if: github.ref == 'refs/heads/main'
+      - run: df -k .
       - name: remove intermediate container
         run: |
           docker rm $INTERMEDIATE_CONTAINER_NAME
@@ -88,6 +92,7 @@ jobs:
       - name: login to ghcr.io
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
       - run: docker system df
+      - run: df -k .
       - name: build and push ${{ matrix.target-context }}
         env:
           DOCKER_BUILDKIT: 1
