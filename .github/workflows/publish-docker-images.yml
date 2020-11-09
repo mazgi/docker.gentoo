@@ -64,15 +64,21 @@ jobs:
       - name: Download archives
         run: |
           ${{ matrix.target-context }}/get-gentoo-archives.sh
-      - name: build intermediate image(downloader)
+      - name: "build intermediate image: $TARGET_STAGE"
+        env:
+          TARGET_STAGE: downloader
         run: |
-          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-downloader:$TAG --target downloader ${{ matrix.target-context }}
-      - name: build intermediate image(builder)
+          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-${TARGET_STAGE}:$TAG --target ${TARGET_STAGE} ${{ matrix.target-context }}
+      - name: "build intermediate image: $TARGET_STAGE"
+        env:
+          TARGET_STAGE: builder
         run: |
-          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-downloader:$TAG --target builder ${{ matrix.target-context }}
-      - name: build intermediate image(reducer)
+          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-${TARGET_STAGE}:$TAG --target ${TARGET_STAGE} ${{ matrix.target-context }}
+      - name: "build intermediate image: $TARGET_STAGE"
+        env:
+          TARGET_STAGE: reducer
         run: |
-          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-downloader:$TAG --target reducer ${{ matrix.target-context }}
+          docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-${TARGET_STAGE}:$TAG --target ${TARGET_STAGE} ${{ matrix.target-context }}
 
       - name: start intermediate container
         run: |

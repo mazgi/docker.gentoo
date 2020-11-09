@@ -1,6 +1,6 @@
 ARG GENTOO_ARCH='amd64'
 ARG GENTOO_MIRROR
-ARG GENTOO_PROFILE="default/linux/${GENTOO_ARCH}/17.1"
+# ARG GENTOO_PROFILE="default/linux/${GENTOO_ARCH}/17.1"
 
 # ================================
 FROM alpine/git as downloader
@@ -27,7 +27,7 @@ RUN :\
 FROM scratch as builder
 
 ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
-ENV GENTOO_PROFILE=${GENTOO_PROFILE:-"default/linux/${GENTOO_ARCH}/17.1"}
+# ENV GENTOO_PROFILE=${GENTOO_PROFILE:-"default/linux/${GENTOO_ARCH}/17.1"}
 
 # Copy extracted files
 COPY --from=downloader /mnt/gentoo /
@@ -41,8 +41,8 @@ RUN locale-gen
 #   && emaint sync --repo gentoo\
 #   # Fall back
 #   || emerge-webrsync --quiet
-RUN : set the profile\
-  && eselect profile set ${GENTOO_PROFILE}
+# RUN : set the profile\
+#   && eselect profile set ${GENTOO_PROFILE}
 RUN : emerge packages\
   emerge -uNDvq --buildpkg --usepkg\
   app-admin/sudo\
