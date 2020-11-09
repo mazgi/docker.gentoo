@@ -79,4 +79,3 @@ LABEL maintainer="docker@mazgi.com"
 LABEL org.opencontainers.image.source="https://github.com/mazgi/docker.gentoo/blob/main/Dockerfile.d/gentoo/Dockerfile"
 CMD ["/bin/zsh"]
 COPY --from=reducer / /
-

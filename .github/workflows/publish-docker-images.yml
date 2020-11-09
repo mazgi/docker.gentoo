@@ -52,6 +52,9 @@ jobs:
       - name: Download archives
         run: |
           ${{ matrix.target-context }}/get-gentoo-archives.sh
+      - name: enable buildkit
+        run: |
+          echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
       - name: store environment variables
         run: |
           echo "INTERMEDIATE_CONTAINER_NAME=intermediate-container-$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
@@ -61,8 +64,6 @@ jobs:
           echo "TAG=$(date +%Y%m-)$SHORT_SHA" >> $GITHUB_ENV
           echo "RESULT_IMAGE=ghcr.io/${{ github.repository_owner }}/$(basename ${{ matrix.target-context }})" >> $GITHUB_ENV
       - name: build intermediate image
-        env:
-          DOCKER_BUILDKIT: 1
         run: |
           docker build --tag $INTERMEDIATE_IMAGE_NAME:$TAG --target builder ${{ matrix.target-context }}
       - name: start intermediate container
@@ -70,11 +71,11 @@ jobs:
           docker run --name=$INTERMEDIATE_CONTAINER_NAME $INTERMEDIATE_IMAGE_NAME:$TAG sh -c ':'
       - run: docker system df
       - run: df -k .
-      - name: cache files
-        run: |
-          TARGET_DIR=var/db/repos/
-          mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
-          docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+      # - name: cache portage repos
+      #   run: |
+      #     TARGET_DIR=var/db/repos/
+      #     mkdir -p ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
+      #     docker cp $INTERMEDIATE_CONTAINER_NAME:/$TARGET_DIR ${{ matrix.target-context }}/cache/amd64/$TARGET_DIR
       - run: df -k .
       - name: cache binpkgs if it is the main branch
         run: |
@@ -86,17 +87,12 @@ jobs:
       - name: remove intermediate container
         run: |
           docker rm $INTERMEDIATE_CONTAINER_NAME
-          sudo apt-get update --quiet
-          sudo apt-get install --assume-yes --no-install-recommends --quiet tree
-          tree -d ${{ matrix.target-context }}/cache/
       - name: login to ghcr.io
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
       - run: docker system df
       - run: df -k .
       - run: du --max-depth=4 -h ${{ matrix.target-context }}
       - name: build and push ${{ matrix.target-context }}
-        env:
-          DOCKER_BUILDKIT: 1
         run: |
           docker build --tag $RESULT_IMAGE ${{ matrix.target-context }}
           docker tag $RESULT_IMAGE $RESULT_IMAGE:$TAG
