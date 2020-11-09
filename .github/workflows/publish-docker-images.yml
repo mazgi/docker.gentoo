@@ -93,6 +93,7 @@ jobs:
         run: echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
       - run: docker system df
       - run: df -k .
+      - run: du --max-depth=4 -h ${{ matrix.target-context }}
       - name: build and push ${{ matrix.target-context }}
         env:
           DOCKER_BUILDKIT: 1

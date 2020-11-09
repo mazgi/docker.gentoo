@@ -39,7 +39,6 @@ RUN locale-gen
 #   # Fall back
 #   || emerge-webrsync --quiet
 RUN : set the profile\
-  && eselect profile list\
   && eselect profile set ${GENTOO_PROFILE}\
   && emerge -Cq sys-apps/openrc sys-apps/sysvinit
 RUN : emerge packages\
