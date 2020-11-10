@@ -64,17 +64,17 @@ jobs:
       - name: Download archives
         run: |
           ${{ matrix.target-context }}/get-gentoo-archives.sh
-      - name: "build intermediate image: $TARGET_STAGE"
+      - name: build intermediate image
         env:
           TARGET_STAGE: downloader
         run: |
           docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-${TARGET_STAGE}:$TAG --target ${TARGET_STAGE} ${{ matrix.target-context }}
-      - name: "build intermediate image: $TARGET_STAGE"
+      - name: build intermediate image
         env:
           TARGET_STAGE: builder
         run: |
           docker build --tag ${INTERMEDIATE_IMAGE_BASENAME}-${TARGET_STAGE}:$TAG --target ${TARGET_STAGE} ${{ matrix.target-context }}
-      - name: "build intermediate image: $TARGET_STAGE"
+      - name: build intermediate image
         env:
           TARGET_STAGE: reducer
         run: |
@@ -85,8 +85,7 @@ jobs:
           docker run --name=${INTERMEDIATE_CONTAINER_BASENAME}-builder ${INTERMEDIATE_IMAGE_BASENAME}-builder:$TAG sh -c ':'
       - name: clear cache
         run: |
-          TARGET_DIR=var/db/repos/
-          rm -rf ${{ matrix.target-context }}/cache/
+          rm -rf ${{ matrix.target-context }}/cache/*
       - name: cache binpkgs if it is the main branch
         run: |
           TARGET_DIR=var/cache/binpkgs/
