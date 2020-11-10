@@ -44,7 +44,7 @@ RUN locale-gen
 # RUN : set the profile\
 #   && eselect profile set ${GENTOO_PROFILE}
 RUN : emerge packages\
-  emerge -uNDvq --buildpkg --usepkg\
+  && emerge -uNDvq --buildpkg --usepkg\
   app-admin/sudo\
   app-portage/eix\
   app-portage/gentoolkit\
