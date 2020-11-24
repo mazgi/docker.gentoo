@@ -46,6 +46,7 @@ RUN locale-gen
 RUN : emerge packages\
   && emerge -uNDvq --buildpkg --usepkg\
   app-admin/sudo\
+  app-crypt/keybase\
   app-portage/eix\
   app-portage/gentoolkit\
   app-misc/screenfetch\
