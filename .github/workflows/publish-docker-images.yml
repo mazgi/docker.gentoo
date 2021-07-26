@@ -5,6 +5,8 @@ on:
     paths:
       - ".github/workflows/**"
       - "Dockerfile.d/**"
+  schedule:
+    - cron: '0 0 * * 0'
 
 jobs:
   detect:
@@ -32,6 +34,7 @@ jobs:
         # See: https://github.com/actions/virtual-environments
         os: [ubuntu-latest]
         target-context: ${{ fromJson(needs.detect.outputs['changed-contexts']) }}
+    timeout-minutes: 120
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
