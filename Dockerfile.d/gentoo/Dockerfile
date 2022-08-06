@@ -6,7 +6,7 @@ ARG GENTOO_MIRROR
 FROM alpine/git as downloader
 
 ENV GENTOO_ARCH=${GENTOO_ARCH:-amd64}
-ENV GENTOO_MIRROR=${GENTOO_MIRROR:-'https://gentoo.osuosl.org/'}
+ENV GENTOO_MIRROR=${GENTOO_MIRROR:-'https://ftp.jaist.ac.jp/pub/Linux/Gentoo/'}
 
 WORKDIR /mnt/gentoo
 
@@ -20,7 +20,7 @@ RUN :\
 # Clone portage repository from GitHub
 RUN :\
   && mkdir -p var/db/repos/\
-  && git clone --depth=1 git://github.com/gentoo-mirror/gentoo.git var/db/repos/gentoo\
+  && git clone --depth=1 https://github.com/gentoo-mirror/gentoo.git var/db/repos/gentoo\
   && rm -rf var/db/repos/gentoo/.git
 
 # ================================

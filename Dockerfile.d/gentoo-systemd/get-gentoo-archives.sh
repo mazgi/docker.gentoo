@@ -1,7 +1,7 @@
 #!/bin/sh
 
 GENTOO_ARCH=${GENTOO_ARCH:-amd64}
-GENTOO_MIRROR=${GENTOO_MIRROR:-'https://gentoo.osuosl.org/'}
+GENTOO_MIRROR=${GENTOO_MIRROR:-'https://ftp.jaist.ac.jp/pub/Linux/Gentoo/'}
 SCRIPT_DIR=$(dirname $(readlink -f "$0"))
 CACHE_DIR=${GENTOO_WORKING_DIR:-${SCRIPT_DIR}/cache/${GENTOO_ARCH}}
 WORKING_DIR=${GENTOO_WORKING_DIR:-${SCRIPT_DIR}/working-dir}
