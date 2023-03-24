@@ -1,4 +1,12 @@
 services:
+  binhost:
+    build:
+      context: Dockerfile.d/binhost
+    image: local.local/${PROJECT_UNIQUE_ID:-no-name}/binhost:HEAD
+    init: true
+    pull_policy: never
+
+  # for testing
   portage:
     image: gentoo/portage
     init: true
