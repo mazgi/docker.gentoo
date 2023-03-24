@@ -1,9 +1,13 @@
 services:
   binhost:
     build:
+      args:
+        GIT_SHORT_SHA:
       context: Dockerfile.d/binhost
     image: local.local/${PROJECT_UNIQUE_ID:-no-name}/binhost:HEAD
     init: true
+    ports:
+      - 8080:80
     pull_policy: never
 
   # for testing
@@ -19,6 +23,8 @@ services:
       - -c
       - |
         sleep infinity
+    environment:
+      PORTAGE_BINHOST: http://binhost/var/cache/binpkgs
     image: gentoo/stage3
     init: true
     volumes:
