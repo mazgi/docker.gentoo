@@ -1,0 +1,139 @@
+name: build-production-images
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestpaths
+on:
+  pull_request:
+    types:
+      - labeled
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  start-build-test-stop-save:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      #
+      # To validate production images: (1/4)
+      - name: Pull images
+        timeout-minutes: 4
+        run: >-
+          docker compose pull
+      - name: Build images
+        timeout-minutes: 4
+        run: >-
+          docker compose
+          build --build-arg=GIT_SHORT_SHA=${GITHUB_SHA::7}
+          binhost
+      #
+      # To validate production images: (2/4)
+      - name: Start services
+        timeout-minutes: 4
+        run: >-
+          docker compose up --wait binhost stage3
+      #
+      # To build and upload production images: (2/3)
+      - name: Save images
+        timeout-minutes: 4
+        run: |-
+          for service in binhost
+          do
+            docker save --output tmp/docker-images/${service} local.local/no-name/${service}:HEAD
+          done
+      #
+      # To validate production images: (3/4)
+      - name: Show logs - binhost
+        timeout-minutes: 1
+        run: >-
+          docker compose logs binhost
+      #
+      # To validate production images: (4/4)
+      - name: Run tests
+        timeout-minutes: 4
+        run: >-
+          docker compose exec stage3 echo todo
+      #
+      # Clean up
+      - name: Stop services
+        timeout-minutes: 1
+        run: >-
+          docker compose down
+      #
+      # To build and upload production images: (3/3)
+      - name: Upload docker images as artifact
+        timeout-minutes: 4
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-images
+          path: tmp/docker-images/*
+          retention-days: 1
+
+  publish-docker-images:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    needs:
+      - start-build-test-stop-save
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ghcr.io
+        service:
+          - binhost
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download docker images
+        timeout-minutes: 4
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-images
+          path: tmp/docker-images/
+      - name: (Test)list docker images
+        run: >-
+          ls -al tmp/docker-images/
+      - name: Load the docker image - ${{ matrix.service }}
+        timeout-minutes: 1
+        run: >-
+          docker load --input tmp/docker-images/${{ matrix.service }}
+      - name: (Test)list docker images
+        run: >-
+          docker images
+      #
+      # Generate the tag
+      - name: Generate the docker tag suffix using the git tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: >-
+          echo TAG_SUFFIX="${GITHUB_REF#refs/*/}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - name: Generate the docker tag suffix using the current date
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: >-
+          echo TAG_SUFFIX="$(date +%Y%m-)${GITHUB_SHA::7}" >> $GITHUB_ENV
+      #
+      # Prepare each registry
+      # ghcr.io
+      - name: Generate tag prefix for ghcr.io
+        if: ${{ matrix.platform == 'ghcr.io' }}
+        run: >-
+          echo TAG_PREFIX="${{ matrix.platform }}/${{ github.repository_owner }}/gentoo-binhost" >> $GITHUB_ENV
+      - name: Login to ghcr.io
+        if: ${{ matrix.platform == 'ghcr.io' }}
+        run: >-
+          echo ${{ secrets.TOKEN_TO_PUSH_GHCR }} | docker login ghcr.io --username ${{ github.repository_owner }} --password-stdin
+      #
+      # Push the image to the registry
+      - name: Push the image - ${{ matrix.service }}, ${{ matrix.platform }}
+        run: |-
+          docker tag local.local/no-name/${{ matrix.service }}:HEAD ${TAG_PREFIX}:${TAG_SUFFIX}
+          docker push ${TAG_PREFIX}:${TAG_SUFFIX}
+      - name: Push the image as latest - ${{ matrix.service }}, ${{ matrix.platform }}
+        if: github.ref == 'refs/heads/main'
+        run: |-
+          docker tag local.local/no-name/${{ matrix.service }}:HEAD ${TAG_PREFIX}:latest
+          docker push ${TAG_PREFIX}:latest
