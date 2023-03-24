@@ -1,6 +1,2 @@
-# stage and portage snapshot archives, distfile
-*.tar.*
-# binpkgs
-*.tbz2
-# distfiles
-*.crate
+*.env
+node_modules/

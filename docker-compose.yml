@@ -1,0 +1,28 @@
+services:
+  # for Prettier Code Formatter
+  # ["INFO" - 00:00:00 AM] Attempted to determine module path from /path/to/the/project
+  # ["ERROR" - 00:00:00 AM] Failed to load module. If you have prettier or plugins referenced in package.json, ensure you have run `npm install`
+  # ["ERROR" - 00:00:00 AM] Cannot find module 'prettier' from '/path/to/the/project'
+  workspace:
+    build:
+      args:
+        GID: ${GID:-0}
+        UID: ${UID:-0}
+      context: Dockerfile.d/workspace
+    command:
+      - zsh
+      - --login
+      - -c
+      - |
+        npm-check-updates --upgrade
+        npm install
+        npm audit fix
+        sort-package-json
+        sleep infinity
+    init: true
+    user: ${UID:-0}:${GID:-0}
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+
+version: "3.9"
