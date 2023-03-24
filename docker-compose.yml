@@ -1,4 +1,21 @@
 services:
+  portage:
+    image: gentoo/portage
+    init: true
+    volumes:
+      - portage-data:/var/db/repos/gentoo
+  stage3:
+    command:
+      - bash
+      - --login
+      - -c
+      - |
+        sleep infinity
+    image: gentoo/stage3
+    init: true
+    volumes:
+      - portage-data:/var/db/repos/gentoo
+
   # for Prettier Code Formatter
   # ["INFO" - 00:00:00 AM] Attempted to determine module path from /path/to/the/project
   # ["ERROR" - 00:00:00 AM] Failed to load module. If you have prettier or plugins referenced in package.json, ensure you have run `npm install`
@@ -26,3 +43,5 @@ services:
     working_dir: /workspace
 
 version: "3.9"
+volumes:
+  portage-data:
